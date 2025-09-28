@@ -10,12 +10,12 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import jakarta.annotation.security.RolesAllowed;
-
+import io.quarkus.cache.CacheResult;
+import io.quarkus.cache.CacheInvalidate;
 
 @Path("/produtos")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-
 public class ProdutoResource {
 
     @POST
@@ -38,6 +38,7 @@ public class ProdutoResource {
     @GET
     @Path("/{id}")
     @RolesAllowed({"user","admin"})
+    @CacheResult(cacheName = "produtos")
     public Response getById(@PathParam("id") Long id) {
         Produto produto = Produto.findById(id);
         if (produto == null) {
@@ -51,12 +52,13 @@ public class ProdutoResource {
     @Path("/{id}")
     @RolesAllowed("admin")
     @Transactional
+    @CacheInvalidate(cacheName = "produtos") // Invalida o cache do produto alterado
     public Response update(@PathParam("id") Long id, @Valid ProdutoDTO dto) {
         Produto produto = Produto.findById(id);
         if (produto == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        // Atualiza a entidade com os dados do DTO
+
         produto.nome = dto.nome;
         produto.descricao = dto.descricao;
         produto.preco = dto.preco;
@@ -69,6 +71,7 @@ public class ProdutoResource {
     @Path("/{id}")
     @RolesAllowed("admin")
     @Transactional
+    @CacheInvalidate(cacheName = "produtos") // Invalida o cache do produto deletado
     public Response delete(@PathParam("id") Long id) {
         boolean deleted = Produto.deleteById(id);
         if (!deleted) {
